@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<body>
+	</body>
+	<!-- jss -->
+	<script src="jss.min.js"></script>
+	<!-- jss plugins -->
+	<script src="jss-camel-case.min.js"></script>
+	<script src="jss-vendor-prefixer.min.js"></script>
+	<script src="jss-nested.min.js"></script>
+	<script src="themes.js"></script>
+	<!-- jQuery -->
+	<script
+	  src="https://code.jquery.com/jquery-1.12.4.min.js"
+	  integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
+	  crossorigin="anonymous"></script>
+	<script>
+		// Setup
+		var jss = jss.default,
+			stylesheet,
+			jssClasses;
+
+
+		jss.use(jssCamelCase.default());
+		jss.use(jssVendorPrefixer.default());
+		jss.use(jssNested.default());
+
+		/**
+		 * An example of what a globally scoped component style/theme
+		 * management function could look like
+		 * @param  {object} component 
+		 * @param  {object} theme     optional
+		 * @return {object}           a class list
+		 */
+		function getThemedStylesForComponent(component, theme){
+			var styleSettings = clone(component.styleSettings),
+				componentTheme = theme ? theme[component.id] : {},
+				stylesheet,
+				styles,
+				classes;
+
+			// Get the value for declarations that are in object notation
+			$.each(styleSettings, function(key){
+				styleSettings[key] = styleSettings[key].val || styleSettings[key];
+			});
+
+			if(componentTheme && componentTheme.tokens){
+				styleSettings = $.extend(styleSettings, componentTheme.tokens);
+			}
+
+			styles = component.getStyles(styleSettings)
+
+			// This is the equivalent of extending our themes with 
+			// arbitrary css. I know right now we don't want to 
+			// allow this, but in the event that we ever need to, this
+			// shows how it could be done
+			if(componentTheme && componentTheme.styles){
+				styles = $.extend(true, styles, componentTheme.styles);
+			}
+
+
+			stylesheet = jss.createStyleSheet(styles);
+			classes = stylesheet.attach().classes;
+
+			return classes;
+		}
+
+		/**
+		 * A simplistic standin for our current components
+		 */
+		var button = {
+			id: 'button',
+			label: 'Button',
+			/**
+			 * The default tokens for a component probably wouldn't be directly on the component
+			 * object, but rather in a closure. For the sake of simplicity here though, they are on
+			 * the component.
+			 *
+			 * As far as streamlining themebuilder integration, most of the labels can be auto-generated
+			 * by separating out camelcases and putting certain words in parenthesis by default like 
+			 * "hover" and "active". Additionally, we can smart-guess the renderer type by checking for 
+			 * certain words in a token. I.E. tokens containing "background" default to a color renderer, 
+			 * tokens containing "textsize" or "fontsize" default to a font-size renderer, etc. With a little
+			 * bit bit of a guide/convention of style configuration naming, defaults represent the possibility
+			 * to reduce boilerplate significantly. But, when they are wrong it is simple enough to override
+			 * them.
+			 */
+			styleSettings: {
+				background: '#fff',
+				backgroundHover: '#f3f3f3',
+				backgroundActive: '#ddd',
+				borderColorActive: '#81cfff',
+				borderRadius: 0,
+				textColor: '',
+				// Alternative object notation
+				someMysteriousProperty: {
+					val: '150px',
+					label: 'Minimum Width',
+					type: 'cssnumber'
+				}
+			},
+			/**
+			 * Returns the styles for this current app, with the tokens applied
+			 * @param  {object} t tokens, required
+			 * @return {object}   a style configuration, suitable for passing into jss
+			 */
+			getStyles: function(t) {
+				return {
+					button: {
+						fontSize: '1rem',
+						border: '1px solid #333',
+						borderColor: t.borderColor,
+						background: t.background,
+						padding: '.5em 1em',
+						margin: '0 .5em',
+						color: t.textColor,
+						borderRadius: t.borderRadius,
+						minWidth: t.someMysteriousProperty,
+						'&:hover': {
+							background: t.backgroundHover
+						},
+						'&:active': {
+							background: t.backgroundActive,
+							outline: 'none',
+							borderColor: t.borderColorActive
+						},
+						'&:focus': {
+							borderCol1or: t.borderColorActive,
+							outline: 'none'
+						}
+					},
+					buttonIcon: {
+						padding: '0 .5em 0 0'
+					}
+				};
+			},
+
+			render: function(theme){
+				var classes = getThemedStylesForComponent(button, theme);
+				$('body').append('<button class=' + classes.button + '><span class=' + classes.buttonIcon + '>+</span>Button</button>');
+			}
+		}
+
+		// Standard styles
+		button.render();
+
+		// A normal theme
+		button.render(themeCool);
+
+		// A theme that extends css
+		button.render(themeGamer);
+
+		// A little helper function
+		function clone(obj){return JSON.parse(JSON.stringify(obj));}
+	</script>
+</head>
+<body>
+</body>
+</html>
